@@ -17,8 +17,12 @@ class RAGReviewEngine:
     """
     def __init__(self, ssl_verify: bool = True):
         # Load API key
-        load_dotenv()
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        # load_dotenv()
+        # self.api_key = os.getenv("OPENAI_API_KEY")
+
+        # Streamlit secrets
+        self.api_key = st.secrets["OPENAI_API_KEY"]
+        
         if not self.api_key:
             raise EnvironmentError(
                 "OPENAI_API_KEY not found in .env. Ensure it's set without quotes."
