@@ -10,6 +10,7 @@ from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import streamlit as st
 
 class RAGReviewEngine:
     """
@@ -20,9 +21,7 @@ class RAGReviewEngine:
         # load_dotenv()
         # self.api_key = os.getenv("OPENAI_API_KEY")
 
-        # Streamlit secrets
-        self.api_key = streamlit.secrets["OPENAI_API_KEY"]
-        
+        self.api_key = st.secrets["OPENAI_API_KEY"]
         if not self.api_key:
             raise EnvironmentError(
                 "OPENAI_API_KEY not found in .env. Ensure it's set without quotes."
