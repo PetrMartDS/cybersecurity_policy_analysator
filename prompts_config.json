@@ -1,0 +1,16 @@
+{
+    "ISMS Policy": "Does the document define an Information Security Management System (ISMS) policy in line with ISO 27001 Clauses 4.2 and 5.2? Provide any missing elements.",
+    "Roles & Responsibilities": "Are information security roles and responsibilities clearly assigned (e.g., management, asset owners, users) per Clause 5.3? List any gaps.",
+    "Risk Assessment Methodology": "Does the document describe a risk assessment and treatment methodology (identification, analysis, evaluation) as required by Clause 6.1.2? Summarize it.",
+    "Objectives & Planning": "Are measurable information security objectives defined and planned (Clause 6.2)? Report missing objectives.",
+    "Asset Management": "Does the document include an asset inventory and classification scheme covering confidentiality, integrity, availability (Annex A.8)? Highlight omissions.",
+    "Access Control": "Does it specify user registration, authentication, and authorization processes aligned with Annex A.9? Point out any missing controls.",
+    "Cryptography": "Are cryptographic controls (A.10) specified—algorithms, key management, usage guidelines? Identify any missing topics.",
+    "Physical & Environmental Security": "Does it address secure areas, equipment security, environmental controls per A.11? Note any gaps.",
+    "Operations Security": "Are operational procedures, change management, malware protection, backup and logging processes defined per A.12? List any missing.",
+    "Communications Security": "Does the document cover network security, information transfer policies and controls (A.13)? Summarize missing elements.",
+    "Supplier Relationships": "Are information security requirements in supplier contracts and monitoring (A.15) specified? Highlight missing parts.",
+    "Incident Management": "Is there an information security incident management process (A.16)—reporting, response, lessons learned? Point out any gaps.",
+    "Business Continuity": "Does it include an information systems continuity plan (A.17) that aligns with the wider business continuity plan? Summarize missing areas.",
+    "Compliance & Audit": "Are legal, regulatory, policy, and audit requirements identified (A.18), and is there an internal audit process? Identify any omissions."
+    }
