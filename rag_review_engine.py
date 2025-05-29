@@ -21,7 +21,7 @@ class RAGReviewEngine:
         # self.api_key = os.getenv("OPENAI_API_KEY")
 
         # Streamlit secrets
-        self.api_key = st.secrets["OPENAI_API_KEY"]
+        self.api_key = streamlit.secrets["OPENAI_API_KEY"]
         
         if not self.api_key:
             raise EnvironmentError(
