@@ -1,23 +1,53 @@
-import json
+import glob
+import yaml
 import streamlit as st
 import pandas as pd
 import io
 from rag_review_engine import RAGReviewEngine
 
-# Load compliance prompts from JSON config
-with open("prompts_config.json", "r") as f:
-    COMPLIANCE_PROMPTS = json.load(f)
+# Load all standards from templates folder
+STANDARDS = {}
+for path in glob.glob("templates/*.yml"):
+    with open(path, 'r') as f:
+        cfg = yaml.safe_load(f)
+        name = cfg.get('name')
+        prompts = {p['id']: p['template'] for p in cfg.get('prompts', [])}
+        STANDARDS[name] = prompts
 
-st.set_page_config(page_title="Cybersecurity Doc Review", layout="wide")
+# Streamlit page config
+st.set_page_config(page_title="Cybersecurity Document Review (RAG)", layout="wide")
 st.title("Cybersecurity Document Review (RAG)")
 
-# Initialize engine (disable SSL check locally; remove verify=False in prod)
-engine = RAGReviewEngine(
-    ssl_verify=False
+# Sidebar: standard and area selection
+st.sidebar.header("Evaluation Settings")
+
+# Select exactly one standard
+selected_standard = st.sidebar.selectbox(
+    "Choose standard", 
+    options=list(STANDARDS.keys()),
+    index=0
 )
 
-# File upload
-uploaded_file = st.file_uploader("Upload a cybersecurity PDF", type=["pdf"])
+# Load prompts for the chosen standard
+available_prompts = STANDARDS[selected_standard]
+
+# Select areas within the chosen standard
+selected_areas = st.sidebar.multiselect(
+    "Choose compliance areas", 
+    options=list(available_prompts.keys()),
+    default=list(available_prompts.keys())
+)
+
+# Initialize RAG engine
+engine = RAGReviewEngine(ssl_verify=False)
+
+# File upload in main area
+uploaded_file = st.file_uploader("Upload a cybersecurity PDF", type=["pdf"] )
+# Clear previous results if a new file is uploaded
+if uploaded_file:
+    if st.session_state.get('last_uploaded') != uploaded_file.name:
+        st.session_state.pop('df', None)
+        st.session_state['last_uploaded'] = uploaded_file.name
 
 if uploaded_file:
     st.info("Extracting and indexing document…")
@@ -26,50 +56,55 @@ if uploaded_file:
     engine.build_index()
     st.success("Document indexed successfully!")
 
-    # Prompt selection (all pre-selected)
-    st.subheader("Select components to review")
-    selected = st.multiselect(
-        "Choose compliance areas:",
-        list(COMPLIANCE_PROMPTS.keys()),
-        default=list(COMPLIANCE_PROMPTS.keys())
-    )
+    if not selected_areas:
+        st.warning("Select at least one compliance area in the sidebar.")
+    else:
+        if st.sidebar.button("Run Compliance Review"):
+            # Build prompt dict for selected areas
+            prompts_to_run = {area: available_prompts[area] for area in selected_areas}
+            results = engine.review_all(prompts_to_run)
 
-    if st.button("Run Compliance Review"):
-        if not selected:
-            st.warning("Select at least one component to review.")
-        else:
-            results = engine.review_all({k: COMPLIANCE_PROMPTS[k] for k in selected})
+            # Parse and tabulate results
             rows = []
             for area, data in results.items():
-                answer = data["answer"] or ""
-                lines = [ln.strip() for ln in answer.split("\n") if ln.strip()]
+                answer = data.get("answer", "") or ""
+                lines = [ln.strip() for ln in answer.splitlines() if ln.strip()]
 
-                # Extract score
+                # Extract score if present
                 score = ""
                 for ln in reversed(lines):
                     if ln.lower().startswith("score:"):
                         score = ln.split(":", 1)[1].strip()
                         break
 
-                # Remove score line from content
+                # Filter out score line
                 content_lines = [ln for ln in lines if not ln.lower().startswith("score:")]
-
-                # Last line is conclusion, rest is analysis
-                if content_lines:
-                    conclusion = content_lines[-1]
-                    analysis = "\n".join(content_lines[:-1])
-                else:
-                    conclusion = ""
-                    analysis = ""
+                conclusion = content_lines[-1] if content_lines else ""
+                analysis = "\n".join(content_lines[:-1]) if len(content_lines) > 1 else ""
 
                 rows.append({
                     "Compliance area": area,
                     "Analysis": analysis,
-                    # "Conclusion": conclusion,
                     "Score": score
                 })
 
-            df = pd.DataFrame(rows).reset_index(drop=True)
+            # Store results in session state
+            st.session_state['df'] = pd.DataFrame(rows)
 
-            st.subheader("Review Results")
-            st.dataframe(df)
+# Display results and download button if available
+if 'df' in st.session_state:
+    df = st.session_state['df']
+    st.subheader("Review Results")
+    st.dataframe(df, use_container_width=True)
+
+    # Generate Excel download
+    towrite = io.BytesIO()
+    df.to_excel(towrite, index=False, sheet_name="Results")
+    towrite.seek(0)
+
+    st.download_button(
+        label="Download results as Excel",
+        data=towrite,
+        file_name="review_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
